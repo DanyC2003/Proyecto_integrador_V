@@ -3,10 +3,28 @@ import json
 import zipfile
 from pathlib import Path
 from typing import List, Any
+import subprocess
+import sys
 
 import numpy as np
 import pandas as pd
-import kagglehub
+
+# Verificación automática de kagglehub
+try:
+    import kagglehub
+    KAGGLEHUB_AVAILABLE = True
+except ImportError:
+    print("📦 kagglehub no está instalado. Instalando automáticamente...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "kagglehub"])
+        import kagglehub
+        KAGGLEHUB_AVAILABLE = True
+        print("✅ kagglehub instalado exitosamente")
+    except Exception as e:
+        print(f"❌ Error al instalar kagglehub: {e}")
+        print("⚠️  Por favor instala manualmente: pip install kagglehub")
+        kagglehub = None
+        KAGGLEHUB_AVAILABLE = False
 
 
 class Ingestar:
@@ -28,6 +46,18 @@ class Ingestar:
     def __init__(self):
         # Permite que ciertas funciones usen información contextual como nombres de columnas
         self.column_names: List[str] = []
+        
+        # Verificar disponibilidad de kagglehub
+        if not KAGGLEHUB_AVAILABLE:
+            print("⚠️  kagglehub no está disponible. Las funciones de descarga de Kaggle estarán deshabilitadas.")
+
+    def _check_kagglehub_availability(self):
+        """Verifica si kagglehub está disponible antes de usarlo."""
+        if not KAGGLEHUB_AVAILABLE or kagglehub is None:
+            raise ImportError(
+                "kagglehub no está disponible. "
+                "Instala manualmente con: pip install kagglehub"
+            )
 
     # ============================
     # 1. Utilidades de validación
@@ -160,13 +190,24 @@ class Ingestar:
         en una carpeta tipo:
         ~/.cache/kagglehub/datasets/<user>/<dataset>/versions/<n>
         """
+        # Verificar disponibilidad de kagglehub
+        self._check_kagglehub_availability()
+        
         if kaggle_ref == "":
             raise ValueError("Debes pasar el nombre del dataset de Kaggle, ej. 'usuario/dataset'.")
 
         print("Descargando dataset desde Kaggle...")
-        dataset_path = kagglehub.dataset_download(kaggle_ref)
-        print("Ruta al dataset:", dataset_path)
-        return dataset_path
+        try:
+            dataset_path = kagglehub.dataset_download(kaggle_ref)
+            print("Ruta al dataset:", dataset_path)
+            return dataset_path
+        except Exception as e:
+            print(f"❌ Error al descargar el dataset: {e}")
+            print("💡 Verifica:")
+            print("   1. Conexión a internet")
+            print("   2. Credenciales de Kaggle configuradas")
+            print("   3. Nombre del dataset correcto")
+            raise
 
     # =========================================================
     # 6. Localización / extracción de archivos en la carpeta

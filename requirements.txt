@@ -1,0 +1,15 @@
+# Dependencias para Dashboard Streamlit
+# Proyecto Integrador V - Análisis de Cultivos Agrícolas
+
+# Framework principal del dashboard
+streamlit>=1.30.0
+
+# Dependencias existentes del proyecto
+pandas
+openpyxl
+requests
+beautifulsoup4
+matplotlib
+kagglehub[pandas-datasets]>=0.3.8
+seaborn
+pyarrow
